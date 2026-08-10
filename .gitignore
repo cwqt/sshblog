@@ -1,0 +1,8 @@
+# Build artifact
+/sshblog
+
+# Generated/held SSH host key
+/.ssh/
+
+# Runtime logs
+*.log

@@ -1,0 +1,16 @@
+# User-facing text and post source for the sshblog TUI.
+# Any field left out falls back to a built-in default.
+
+title: sshblog
+
+description: |-
+  A little blog you read over SSH.
+  Edit sshblog.yaml to change this text.
+  Drop markdown posts into the posts directory.
+
+# Directory of markdown posts (relative to the working directory).
+posts: posts
+
+help:
+  index: "↑/k up • ↓/j down • enter select • q quit"
+  reader: "↑/k up • ↓/j down • esc/backspace back • q quit"
