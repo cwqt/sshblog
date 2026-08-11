@@ -32,7 +32,8 @@ type Model struct {
 	list       list.Model // Post index (bubbles/list): navigation, filtering, help
 	reading    post.Post  // Post currently open in the reader
 	feedTarget string     // URL or path the RSS key hands to the system opener
-	openErr    error      // Last feed-open failure, shown under the index list
+	copied     bool       // Whether the "copied RSS link" confirmation is showing under the list
+	copyGen    int        // Bumped on each RSS copy so a stale expiry tick doesn't clear a newer one
 	pendingG   bool       // First `g` of a vim-style `gg` seen, awaiting the second
 	footer     string     // Rendered "sshblog <version>" link, inlined on the help line
 	footerW    int        // Visible width of footer (excludes the OSC 8 escapes)
@@ -71,11 +72,11 @@ func versionLabel() (label, url string) {
 	return label, url
 }
 
-// feedTarget resolves what the RSS key hands to the system opener. With a
-// public URL configured it prefers the hosted feed (served by a co-located web
-// server) at "<url>/<basename(feed_path)>"; otherwise it falls back to opening
-// the generated file directly, which is mainly useful in local development.
-// An empty result means no feed is available.
+// feedTarget resolves the feed link revealed by the RSS key. With a public URL
+// configured it prefers the hosted feed (served by a co-located web server) at
+// "<url>/<basename(feed_path)>"; otherwise it falls back to the generated file
+// path, which is mainly useful in local development. An empty result means no
+// feed is available.
 func feedTarget(cfg config.Config) string {
 	if cfg.URL != "" {
 		name := "rss.xml"
@@ -107,11 +108,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	case feedOpenedMsg:
-		// Surface any opener failure on its own line under the list, re-sizing
-		// the list so the extra line doesn't push the frame off the alt screen.
-		m.openErr = msg.err
-		m.resizeList()
+	case copyExpiredMsg:
+		// Ignore expiry ticks from a superseded copy so a rapid re-press keeps
+		// the confirmation up for its full 2s. The confirmation only swaps the
+		// controls line in place, so there's no layout to resize.
+		if msg.gen == m.copyGen {
+			m.copied = false
+		}
 		return m, nil
 
 	case tea.KeyMsg:
