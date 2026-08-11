@@ -2,11 +2,17 @@ package ui
 
 import (
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
+
+// copyExpiredMsg clears the "copied" confirmation 2s after the RSS key was
+// pressed. gen ties it to the press that scheduled it, so a fresh press
+// restarts the timer rather than an earlier one cutting it short.
+type copyExpiredMsg struct{ gen int }
 
 func (m Model) updateIndex(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// While the filter input is focused, every keystroke belongs to the list.
@@ -34,13 +40,18 @@ func (m Model) updateIndex(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.feedTarget == "" {
 			break
 		}
-		// Hand the hosted feed URL (or local file) to the system opener. Clear
-		// any prior failure and reclaim its footer line until it reports back.
-		if m.openErr != nil {
-			m.openErr = nil
-			m.resizeList()
-		}
-		return m, openFeed(m.feedTarget)
+		// Copy the feed URL to the client's clipboard via OSC 52, written
+		// straight to the session output. A launcher can only ever run on the
+		// SSH host (a headless remote, usually) and never reaches the reader's
+		// machine, whereas OSC 52 is interpreted by their own terminal. Then
+		// flash a confirmation over the controls line that clears after 2s.
+		m.renderer.Output().Copy(m.feedTarget)
+		m.copied = true
+		m.copyGen++
+		gen := m.copyGen
+		return m, tea.Tick(2*time.Second, func(time.Time) tea.Msg {
+			return copyExpiredMsg{gen: gen}
+		})
 	}
 
 	// Everything else — navigation, filtering, pagination, quit — is the
@@ -56,24 +67,12 @@ func (m Model) indexHeader() string {
 		m.styles.description.Render(m.cfg.Description)
 }
 
-// indexFooter is the optional error line shown under the list (empty when
-// there's nothing to report).
-func (m Model) indexFooter() string {
-	if m.openErr == nil {
-		return ""
-	}
-	return m.styles.help.Render("couldn't open RSS feed: " + m.openErr.Error())
-}
-
-// resizeList sizes the list to the space left under the header and above the
-// error line, so the index frame always fills the viewport exactly without
-// overflowing the alt screen. The version footer is inlined onto the list's
-// own help line (see inlineFooter), so it costs no extra row.
+// resizeList sizes the list to the space left under the header, so the index
+// frame always fills the viewport exactly without overflowing the alt screen.
+// The version footer is inlined onto the list's own help line (see
+// inlineFooter), so it costs no extra row.
 func (m *Model) resizeList() {
 	reserved := lipgloss.Height(m.indexHeader()) + 1 // header + its separator
-	if f := m.indexFooter(); f != "" {
-		reserved += lipgloss.Height(f) + 1 // error line + its separator
-	}
 	h := m.Height - reserved
 	if h < 1 {
 		h = 1
@@ -82,25 +81,26 @@ func (m *Model) resizeList() {
 }
 
 func (m Model) viewIndex() string {
-	frame := m.indexHeader() + "\n" + m.inlineFooter(m.list.View())
-	if f := m.indexFooter(); f != "" {
-		frame += "\n" + f
-	}
-	return frame
+	return m.indexHeader() + "\n" + m.inlineFooter(m.list.View())
 }
 
 // inlineFooter right-aligns the version link onto the list's help line (the
 // last line of body) when there is room. If it wouldn't fit it is omitted
-// rather than wrapped, so the frame height never changes.
+// rather than wrapped, so the frame height never changes. While a feed copy is
+// fresh, the controls text on that line is swapped for the copy confirmation
+// for 2s (the version link still trails on the right).
 func (m Model) inlineFooter(body string) string {
-	if m.footer == "" || m.Width == 0 {
-		return body
-	}
 	lines := strings.Split(body, "\n")
 	i := len(lines) - 1
+	if m.copied {
+		lines[i] = m.styles.copyNotice.Render("Copied RSS link (" + m.feedTarget + ") to clipboard")
+	}
+	if m.footer == "" || m.Width == 0 {
+		return strings.Join(lines, "\n")
+	}
 	gap := m.Width - lipgloss.Width(lines[i]) - m.footerW
 	if gap < 1 {
-		return body
+		return strings.Join(lines, "\n")
 	}
 	lines[i] += strings.Repeat(" ", gap) + m.footer
 	return strings.Join(lines, "\n")

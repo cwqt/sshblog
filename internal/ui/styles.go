@@ -40,8 +40,9 @@ type Styles struct {
 	date     lipgloss.Style
 	header   lipgloss.Style
 	meta     lipgloss.Style
-	help     lipgloss.Style
-	footer   lipgloss.Style
+	help       lipgloss.Style
+	copyNotice lipgloss.Style
+	footer     lipgloss.Style
 }
 
 // newStyles builds the style set from a session-bound renderer.
@@ -93,6 +94,14 @@ func newStyles(r *lipgloss.Renderer) Styles {
 			Foreground(muted).
 			Italic(true).
 			MarginTop(1),
+
+		// Copy confirmation that briefly stands in for the controls line. It
+		// mirrors that line's geometry — 2-space left pad (the list's HelpStyle
+		// left padding) and no top margin — so swapping it in doesn't shift the
+		// frame, and takes the help key-hint color so it reads as the footer.
+		copyNotice: r.NewStyle().
+			Foreground(helpKeyColor).
+			PaddingLeft(2),
 
 		// Footer tag (project name + version link), inlined onto the help line
 		// and matching its key-hint color so the two read as one footer.
