@@ -16,10 +16,10 @@ import (
 func TestReaderFrameFitsViewport(t *testing.T) {
 	r := lipgloss.NewRenderer(os.Stdout)
 	m := Model{
-		Posts: []post.Post{{
+		reading: post.Post{
 			Title: "A Reasonably Long Blog Post Title",
 			Date:  time.Now(),
-		}},
+		},
 		Page:     PageReader,
 		Ready:    true,
 		renderer: r,

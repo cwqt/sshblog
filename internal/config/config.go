@@ -22,6 +22,16 @@ type Config struct {
 	Help Help `yaml:"help"`
 	// Posts is the directory of markdown posts to load.
 	Posts string `yaml:"posts"`
+	// URL is the site's public base URL (e.g. "https://cass.si"). Optional; it
+	// supplies the RSS feed's channel and item permalinks. Left empty, the feed
+	// still renders but items carry slug-only (non-permalink) guids.
+	URL string `yaml:"url"`
+	// FeedPath is where `sshblog -gen-feed` writes the RSS document, typically a
+	// path inside a co-located web server's document root (e.g.
+	// "/var/www/html/rss.xml") so the feed is served at a stable public URL.
+	// Optional; when set together with URL, the RSS key opens
+	// "<url>/<basename(feed_path)>", otherwise it opens this file directly.
+	FeedPath string `yaml:"feed_path"`
 }
 
 // Help holds the footer hint text for each page.

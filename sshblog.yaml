@@ -11,6 +11,9 @@ description: |-
 # Directory of markdown posts (relative to the working directory).
 posts: posts
 
+# Public base URL of the site, used for RSS feed permalinks (optional).
+# url: https://example.com
+
 help:
   index: "↑/k up • ↓/j down • enter select • q quit"
   reader: "↑/k up • ↓/j down • esc/backspace back • q quit"

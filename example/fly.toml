@@ -1,0 +1,33 @@
+# Fly.io app config for an sshblog deployment.
+# Rename the app and pick a region, then `fly launch --no-deploy` (or
+# `fly apps create <name>`) and `fly deploy`.
+app = "sshblog-example"
+primary_region = "iad"
+
+[build]
+
+# HTTP — nginx serves the static landing page and the generated rss.xml.
+# Fly terminates TLS, so nginx only needs plain HTTP on 8080.
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "off"
+  min_machines_running = 1
+
+# SSH — raw TCP passthrough to sshblog. External :22 -> internal :2222.
+[[services]]
+  protocol = "tcp"
+  internal_port = 2222
+
+  [[services.ports]]
+    port = 22
+
+# Persist the generated SSH host key across deploys, so clients don't hit
+# "host key changed" warnings. Mounted where sshblog reads .ssh/id_ed25519.
+[mounts]
+  source = "hostkey"
+  destination = "/app/.ssh"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

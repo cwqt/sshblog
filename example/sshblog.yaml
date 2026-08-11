@@ -1,0 +1,24 @@
+# sshblog configuration for the example deployment.
+# Every field is optional and falls back to a built-in default.
+
+title: sshblog
+
+description: |-
+  A little blog you read over SSH.
+  Edit sshblog.yaml to change this text.
+
+# Markdown posts (YYYY-MM-DD-slug.md with title/date front-matter).
+posts: posts
+
+# Public base URL — drives RSS feed permalinks and the address the `r` key
+# opens. Set this to your own domain.
+url: https://example.com
+
+# Where `sshblog -gen-feed` writes the feed at build time. This points inside
+# nginx's document root (see deploy/nginx.conf), so it is served at
+# https://example.com/rss.xml.
+feed_path: /var/www/html/rss.xml
+
+help:
+  index: "↑/k up • ↓/j down • enter select • q quit"
+  reader: "↑/k up • ↓/j down • esc/backspace back • q quit"

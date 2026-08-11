@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"log"
 	"net"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/cwqt/sshblog/internal/config"
+	"github.com/cwqt/sshblog/internal/feed"
 	"github.com/cwqt/sshblog/internal/post"
 	"github.com/cwqt/sshblog/internal/ui"
 
@@ -27,6 +29,10 @@ const (
 )
 
 func main() {
+	genFeed := flag.Bool("gen-feed", false,
+		"write the RSS feed to the configured feed_path and exit (build-time generation)")
+	flag.Parse()
+
 	// Load config (falls back to defaults if sshblog.yaml is absent)
 	cfg, err := config.Load(configPath)
 	if err != nil {
@@ -39,6 +45,16 @@ func main() {
 		log.Fatalf("Failed to load posts: %v", err)
 	}
 	log.Printf("Loaded %d posts from %q", len(posts), cfg.Posts)
+
+	// Build-time generation: emit the feed to disk (typically a co-located web
+	// server's document root) and exit, without starting the SSH server.
+	if *genFeed {
+		if err := writeFeed(posts, cfg); err != nil {
+			log.Fatalf("Failed to generate feed: %v", err)
+		}
+		log.Printf("Wrote RSS feed to %q", cfg.FeedPath)
+		return
+	}
 
 	// Create SSH server
 	s, err := wish.NewServer(
@@ -81,4 +97,17 @@ func teaHandler(posts []post.Post, cfg config.Config) bubbletea.Handler {
 		renderer := bubbletea.MakeRenderer(s)
 		return ui.New(posts, renderer, cfg), []tea.ProgramOption{tea.WithAltScreen()}
 	}
+}
+
+// writeFeed generates the RSS 2.0 feed for the loaded posts and writes it to
+// cfg.FeedPath, which must be set.
+func writeFeed(posts []post.Post, cfg config.Config) error {
+	if cfg.FeedPath == "" {
+		return errors.New("feed_path is not set in " + configPath)
+	}
+	xml, err := feed.Generate(posts, cfg)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(cfg.FeedPath, []byte(xml), 0o644)
 }

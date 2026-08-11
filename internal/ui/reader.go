@@ -50,9 +50,8 @@ func (m Model) clampScroll(offset int) int {
 
 // readerHeader renders the title + date block shown above the post body.
 func (m Model) readerHeader() string {
-	post := m.Posts[m.Cursor]
-	return m.styles.header.Render(post.Title) + "\n" +
-		m.styles.meta.Render(post.Date.Format("January 2, 2006"))
+	return m.styles.header.Render(m.reading.Title) + "\n" +
+		m.styles.meta.Render(m.reading.Date.Format("January 2, 2006"))
 }
 
 // readerVisibleHeight is how many body lines fit given the current viewport,
@@ -69,10 +68,6 @@ func (m Model) readerVisibleHeight() int {
 }
 
 func (m Model) viewReader() string {
-	if m.Cursor >= len(m.Posts) {
-		return "No post selected"
-	}
-
 	// Content with scrolling
 	lines := strings.Split(m.Content, "\n")
 	visibleHeight := m.readerVisibleHeight()
