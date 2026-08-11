@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"strings"
+
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -64,12 +66,13 @@ func (m Model) indexFooter() string {
 }
 
 // resizeList sizes the list to the space left under the header and above the
-// footer, so the index frame always fills the viewport exactly without
-// overflowing the alt screen.
+// error line, so the index frame always fills the viewport exactly without
+// overflowing the alt screen. The version footer is inlined onto the list's
+// own help line (see inlineFooter), so it costs no extra row.
 func (m *Model) resizeList() {
 	reserved := lipgloss.Height(m.indexHeader()) + 1 // header + its separator
 	if f := m.indexFooter(); f != "" {
-		reserved += lipgloss.Height(f) + 1 // footer + its separator
+		reserved += lipgloss.Height(f) + 1 // error line + its separator
 	}
 	h := m.Height - reserved
 	if h < 1 {
@@ -79,9 +82,26 @@ func (m *Model) resizeList() {
 }
 
 func (m Model) viewIndex() string {
-	frame := m.indexHeader() + "\n" + m.list.View()
+	frame := m.indexHeader() + "\n" + m.inlineFooter(m.list.View())
 	if f := m.indexFooter(); f != "" {
 		frame += "\n" + f
 	}
 	return frame
+}
+
+// inlineFooter right-aligns the version link onto the list's help line (the
+// last line of body) when there is room. If it wouldn't fit it is omitted
+// rather than wrapped, so the frame height never changes.
+func (m Model) inlineFooter(body string) string {
+	if m.footer == "" || m.Width == 0 {
+		return body
+	}
+	lines := strings.Split(body, "\n")
+	i := len(lines) - 1
+	gap := m.Width - lipgloss.Width(lines[i]) - m.footerW
+	if gap < 1 {
+		return body
+	}
+	lines[i] += strings.Repeat(" ", gap) + m.footer
+	return strings.Join(lines, "\n")
 }

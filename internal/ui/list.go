@@ -126,17 +126,14 @@ func newListStyles(r *lipgloss.Renderer) list.Styles {
 	return s
 }
 
-// newHelpStyles binds the help footer's key/description/separator styles to r.
+// newHelpStyles binds the help footer's key/description/separator styles to r,
+// using the shared help palette (see styles.go).
 func newHelpStyles(r *lipgloss.Renderer) help.Styles {
-	keyColor := lipgloss.AdaptiveColor{Light: "#909090", Dark: "#626262"}
-	descColor := lipgloss.AdaptiveColor{Light: "#B2B2B2", Dark: "#4A4A4A"}
-	sepColor := lipgloss.AdaptiveColor{Light: "#DDDADA", Dark: "#3C3C3C"}
-
 	var s help.Styles
-	s.Ellipsis = r.NewStyle().Foreground(sepColor)
-	s.ShortKey = r.NewStyle().Foreground(keyColor)
-	s.ShortDesc = r.NewStyle().Foreground(descColor)
-	s.ShortSeparator = r.NewStyle().Foreground(sepColor)
+	s.Ellipsis = r.NewStyle().Foreground(helpSepColor)
+	s.ShortKey = r.NewStyle().Foreground(helpKeyColor)
+	s.ShortDesc = r.NewStyle().Foreground(helpDescColor)
+	s.ShortSeparator = r.NewStyle().Foreground(helpSepColor)
 	s.FullKey = s.ShortKey
 	s.FullDesc = s.ShortDesc
 	s.FullSeparator = s.ShortSeparator

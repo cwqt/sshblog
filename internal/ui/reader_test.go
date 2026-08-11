@@ -64,6 +64,33 @@ func TestReaderTopBottomNavigation(t *testing.T) {
 	}
 }
 
+// TestTimeAgo covers the relative-time bucketing used on the reader date line.
+func TestTimeAgo(t *testing.T) {
+	now := time.Date(2026, 8, 11, 12, 0, 0, 0, time.UTC)
+	cases := []struct {
+		ago  time.Duration
+		want string
+	}{
+		{30 * time.Second, "just now"},
+		{-time.Hour, "just now"}, // future
+		{1 * time.Minute, "1 minute ago"},
+		{5 * time.Minute, "5 minutes ago"},
+		{1 * time.Hour, "1 hour ago"},
+		{3 * time.Hour, "3 hours ago"},
+		{25 * time.Hour, "1 day ago"},
+		{6 * 24 * time.Hour, "6 days ago"},
+		{7 * 24 * time.Hour, "1 week ago"},
+		{28 * 24 * time.Hour, "4 weeks ago"},
+		{60 * 24 * time.Hour, "2 months ago"},
+		{400 * 24 * time.Hour, "1 year ago"},
+	}
+	for _, c := range cases {
+		if got := timeAgo(now.Add(-c.ago), now); got != c.want {
+			t.Errorf("timeAgo(-%s) = %q, want %q", c.ago, got, c.want)
+		}
+	}
+}
+
 // TestReaderFrameFitsViewport guards against the reader frame overflowing the
 // terminal height, which in alt-screen mode scrolls the post title off the top.
 func TestReaderFrameFitsViewport(t *testing.T) {

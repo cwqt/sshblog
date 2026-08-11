@@ -34,6 +34,8 @@ type Model struct {
 	feedTarget string     // URL or path the RSS key hands to the system opener
 	openErr    error      // Last feed-open failure, shown under the index list
 	pendingG   bool       // First `g` of a vim-style `gg` seen, awaiting the second
+	footer     string     // Rendered "sshblog <version>" link, inlined on the help line
+	footerW    int        // Visible width of footer (excludes the OSC 8 escapes)
 
 	renderer *lipgloss.Renderer // Session-bound renderer (client terminal)
 	styles   Styles             // Styles built from the renderer
@@ -44,14 +46,29 @@ type Model struct {
 // bound to the SSH session (via bubbletea.MakeRenderer) so colors reflect the
 // client's terminal rather than the server's stdout.
 func New(posts []post.Post, renderer *lipgloss.Renderer, cfg config.Config) Model {
+	styles := newStyles(renderer)
+	label, url := versionLabel()
 	return Model{
 		Page:       PageIndex,
 		list:       newPostList(posts, renderer, cfg),
 		feedTarget: feedTarget(cfg),
+		footer:     styles.footer.Render(hyperlink(url, label)),
+		footerW:    lipgloss.Width(label),
 		renderer:   renderer,
-		styles:     newStyles(renderer),
+		styles:     styles,
 		cfg:        cfg,
 	}
+}
+
+// versionLabel returns the footer's plain text ("sshblog <version>") and the
+// repository URL it links to.
+func versionLabel() (label, url string) {
+	version, url := buildInfo()
+	label = "sshblog"
+	if version != "" {
+		label += " " + version
+	}
+	return label, url
 }
 
 // feedTarget resolves what the RSS key hands to the system opener. With a

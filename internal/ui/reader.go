@@ -1,8 +1,10 @@
 package ui
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
@@ -71,10 +73,46 @@ func (m Model) clampScroll(offset int) int {
 	return offset
 }
 
-// readerHeader renders the title + date block shown above the post body.
+// readerHeader renders the title + date block shown above the post body. The
+// date carries a coarse "N weeks ago" relative suffix when it's set.
 func (m Model) readerHeader() string {
+	date := m.reading.Date.Format("January 2, 2006")
+	if !m.reading.Date.IsZero() {
+		date += " · " + timeAgo(m.reading.Date, time.Now())
+	}
 	return m.styles.header.Render(m.reading.Title) + "\n" +
-		m.styles.meta.Render(m.reading.Date.Format("January 2, 2006"))
+		m.styles.meta.Render(date)
+}
+
+// timeAgo renders a coarse relative time like "4 weeks ago" for t as seen from
+// now, collapsing anything under a minute (or in the future) to "just now".
+func timeAgo(t, now time.Time) string {
+	d := now.Sub(t)
+	days := int(d.Hours()) / 24
+	switch {
+	case d < time.Minute:
+		return "just now"
+	case d < time.Hour:
+		return plural(int(d.Minutes()), "minute")
+	case d < 24*time.Hour:
+		return plural(int(d.Hours()), "hour")
+	case days < 7:
+		return plural(days, "day")
+	case days < 30:
+		return plural(days/7, "week")
+	case days < 365:
+		return plural(days/30, "month")
+	default:
+		return plural(days/365, "year")
+	}
+}
+
+// plural formats a count with its unit as an "N unit(s) ago" phrase.
+func plural(n int, unit string) string {
+	if n == 1 {
+		return "1 " + unit + " ago"
+	}
+	return fmt.Sprintf("%d %ss ago", n, unit)
 }
 
 // readerVisibleHeight is how many body lines fit given the current viewport,
