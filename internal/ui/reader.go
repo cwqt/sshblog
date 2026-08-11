@@ -13,7 +13,19 @@ import (
 )
 
 func (m Model) updateReader(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
+	key := msg.String()
+
+	// A pending `g` is only completed by a second `g` (vim's "go to top"); any
+	// other key cancels the sequence and is handled normally below.
+	if m.pendingG {
+		m.pendingG = false
+		if key == "g" {
+			m.ScrollOffset = 0
+			return m, nil
+		}
+	}
+
+	switch key {
 	case "q", "ctrl+c":
 		return m, tea.Quit
 
@@ -21,6 +33,12 @@ func (m Model) updateReader(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.Page = PageIndex
 		m.ScrollOffset = 0
 		return m, tea.ClearScreen
+
+	case "g":
+		m.pendingG = true
+
+	case "G":
+		m.ScrollOffset = m.maxScroll()
 
 	case "up", "k":
 		if m.ScrollOffset > 0 {
@@ -36,13 +54,18 @@ func (m Model) updateReader(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) clampScroll(offset int) int {
+// maxScroll is the largest scroll offset that still fills the viewport — i.e.
+// the offset that places the last line of content at the bottom of the screen.
+func (m Model) maxScroll() int {
 	lines := strings.Split(m.Content, "\n")
-	maxScroll := len(lines) - m.readerVisibleHeight()
-	if maxScroll < 0 {
-		maxScroll = 0
+	if maxScroll := len(lines) - m.readerVisibleHeight(); maxScroll > 0 {
+		return maxScroll
 	}
-	if offset > maxScroll {
+	return 0
+}
+
+func (m Model) clampScroll(offset int) int {
+	if maxScroll := m.maxScroll(); offset > maxScroll {
 		return maxScroll
 	}
 	return offset

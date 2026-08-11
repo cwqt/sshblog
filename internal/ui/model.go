@@ -33,6 +33,7 @@ type Model struct {
 	reading    post.Post  // Post currently open in the reader
 	feedTarget string     // URL or path the RSS key hands to the system opener
 	openErr    error      // Last feed-open failure, shown under the index list
+	pendingG   bool       // First `g` of a vim-style `gg` seen, awaiting the second
 
 	renderer *lipgloss.Renderer // Session-bound renderer (client terminal)
 	styles   Styles             // Styles built from the renderer
