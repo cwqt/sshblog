@@ -6,8 +6,8 @@ Charm's Wish. All user-facing text and the posts directory come from
 `sshblog.yaml`.
 
 ```
-  ┌──────────────┐        make dev
-  │   Makefile   │  ─ go build sshblog ─►  ./sshblog >/tmp/sshblog.log 2>&1 &
+  ┌──────────────┐        just dev
+  │   justfile   │  ─ go build sshblog ─►  ./sshblog >/tmp/sshblog.log 2>&1 &
   │              │        then: ssh -tt localhost -p 2222 ───────────────┐
   └──────────────┘                                                       │
                                                                          │ SSH (:2222)
@@ -69,7 +69,7 @@ Charm's Wish. All user-facing text and the posts directory come from
    `Model` → `Styles` → glamour. This is the seam the color handling lives on:
    every color decision reads the _client's_ terminal, never the server
    process's stdout. (Using the global renderer instead strips all color under
-   `make dev`, where the server's stdout is a log file.)
+   `just dev`, where the server's stdout is a log file.)
 
 3. **Runtime (MVU loop):** Bubble Tea drives `Update`/`View`. State is `Page`
    (Index ↔ Reader) plus `ScrollOffset`; `index.go` and `reader.go` are the two
@@ -85,7 +85,7 @@ Charm's Wish. All user-facing text and the posts directory come from
    while its filter input is focused. Crucially, `newPostList` rebuilds **every**
    style (list, delegate, help) from the session renderer — bubbles' package
    defaults use the global renderer, which would render the list colorless under
-   `make dev`, where the server's stdout is a log file. The logo + description
+   `just dev`, where the server's stdout is a log file. The logo + description
    are still drawn by `index.go` above the list (the list's own title bar is
    hidden).
 
@@ -104,7 +104,7 @@ Charm's Wish. All user-facing text and the posts directory come from
    file. `r` (shown as `r rss` in the list's help footer) fires `open.go`, which
    hands that target to the OS opener (`open`/`xdg-open`/`start`). The opener
    runs on the **server** host, so it only reaches a browser when the server
-   shares a desktop with the client (local `make dev`); a launch failure is
+   shares a desktop with the client (local `just dev`); a launch failure is
    surfaced on a footer line under the list (`index.go`'s `openErr`, which
    `resizeList` accounts for so the frame never overflows the alt screen).
    Remote readers instead point their feed reader at the public URL directly.

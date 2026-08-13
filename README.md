@@ -5,16 +5,19 @@ Host your blog over SSH.
 ## Quick start
 
 ```sh
-make dev      # build, start the server, and connect over SSH
+just dev      # build, start the server, and connect over SSH
 ```
 
 Or manually:
 
 ```sh
-make build    # produces ./sshblog
+just build    # produces ./sshblog
 ./sshblog     # listens on 0.0.0.0:2222
 ssh -p 2222 localhost
 ```
+
+Recipes are defined in the [`justfile`](justfile); run `just` to list them.
+Install with `brew install just`.
 
 ## Posts
 
