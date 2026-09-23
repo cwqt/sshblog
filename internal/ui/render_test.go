@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cwqt/sshblog/internal/config"
 	"github.com/cwqt/sshblog/internal/post"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -77,5 +78,29 @@ func TestCollapseSoftBreaks(t *testing.T) {
 	}
 	if !strings.Contains(got, "# A heading\nbody after heading") {
 		t.Errorf("heading must not merge with body:\n%s", got)
+	}
+}
+
+// TestIndexHeaderWrapsDescription guards the index header against a long
+// description running off the right edge: every line must fit the viewport,
+// and the block must actually fold rather than stay one long line.
+func TestIndexHeaderWrapsDescription(t *testing.T) {
+	cfg := config.Default()
+	cfg.Description = "A little blog you read over SSH, with a deliberately " +
+		"long single-line description that has to fold to fit, plus a word no " +
+		"break can help with: " + strings.Repeat("x", 120)
+
+	r := lipgloss.NewRenderer(os.Stdout)
+	for _, width := range []int{20, 40, 80, 200} {
+		m := Model{Width: width, Height: 24, renderer: r, styles: newStyles(r), cfg: cfg}
+		lines := strings.Split(m.indexHeader(), "\n")
+		if len(lines) < 3 {
+			t.Errorf("width %d: description did not wrap: %q", width, lines)
+		}
+		for i, ln := range lines {
+			if w := lipgloss.Width(ln); w > width {
+				t.Errorf("width %d: line %d is %d cols: %q", width, i, w, ln)
+			}
+		}
 	}
 }

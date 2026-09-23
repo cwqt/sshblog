@@ -64,7 +64,24 @@ func (m Model) updateIndex(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 // indexHeader is the logo + description block rendered above the post list.
 func (m Model) indexHeader() string {
 	return m.styles.logo.Render(m.cfg.Title) + "\n\n" +
-		m.styles.description.Render(m.cfg.Description)
+		m.styles.description.Render(m.wrapDescription())
+}
+
+// wrapDescription folds the configured description to the columns the block
+// actually has — the viewport minus the style's own padding — so a long line
+// wraps here instead of running off the edge (or being soft-wrapped mid-word
+// by the terminal). It's capped at maxRenderWidth for the same readability
+// reason the reader caps its body. Before the first window size arrives there
+// is nothing to wrap to, so the text is left alone.
+func (m Model) wrapDescription() string {
+	width := m.Width - m.styles.description.GetHorizontalPadding()
+	if width > maxRenderWidth {
+		width = maxRenderWidth
+	}
+	if width < 1 {
+		return m.cfg.Description
+	}
+	return wrapToWidth(m.cfg.Description, width)
 }
 
 // resizeList sizes the list to the space left under the header, so the index

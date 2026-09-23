@@ -194,13 +194,15 @@ func (m Model) renderMarkdown(content string, width int) string {
 		return content
 	}
 
-	// Wrap on word boundaries (only breaking a word when it alone exceeds the
-	// limit, e.g. a long URL); the Hardwrap clamps the couple of columns Wrap
-	// can leave hanging at a breakpoint so no line ever exceeds the cap.
-	rendered = xansi.Hardwrap(xansi.Wrap(strings.TrimSpace(rendered), width, ""), width, false)
+	return wrapToWidth(strings.TrimSpace(rendered), width)
+}
 
-	// Trim any space left at a wrap boundary.
-	lines := strings.Split(rendered, "\n")
+// wrapToWidth wraps s to width columns on word boundaries (only breaking a
+// word when it alone exceeds the limit, e.g. a long URL); the Hardwrap clamps
+// the couple of columns Wrap can leave hanging at a breakpoint so no line ever
+// exceeds the cap. Any space left at a wrap boundary is trimmed.
+func wrapToWidth(s string, width int) string {
+	lines := strings.Split(xansi.Hardwrap(xansi.Wrap(s, width, ""), width, false), "\n")
 	for i, ln := range lines {
 		lines[i] = strings.TrimRight(ln, " ")
 	}
